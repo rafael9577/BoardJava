@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Scanner;
 
 import static dio.avanade2025.board.persistence.config.ConnectionConfig.getConnection;
-import static dio.avanade2025.board.persistence.entity.BoardColumnKindEnum.INITIAL;
+import static dio.avanade2025.board.persistence.entity.BoardColumnKindEnum.*;
 
 public class MainMenu {
 
@@ -56,13 +56,16 @@ public class MainMenu {
         try (var connection = getConnection()) {
             var queryService = new BoardQueryServices(connection);
             var optional = queryService.findById(id);
-
-            if (optional.isPresent()) {
-                var boardMenu = new BoardMenu(optional.get());
-                boardMenu.execute();
-            } else {
-                System.out.printf("não foi encontrado um board com id %s\n", id);
-            }
+            optional.ifPresentOrElse(
+                    b -> {
+                        try {
+                            new BoardMenu(b).execute();
+                        } catch (SQLException e) {
+                            throw new RuntimeException(e);
+                        }
+                    },
+                    () -> System.out.printf("Não foi encontrado um board com o id %s\n", id)
+            );
         }
     }
 
@@ -81,30 +84,31 @@ public class MainMenu {
 
         var initialColumn = createColumn(initialColumnsName, INITIAL, 0);
         columns.add(initialColumn);
+
+
         for (int i = 0; i < additionalcollumns; i++) {
-            System.out.println("informe o nome da coluna de tarefa pensente");
+            System.out.println("informe o nome da coluna de tarefa pendente");
             var pendingColumnName = scanner.next();
-            var pendingColumn = createColumn(pendingColumnName, INITIAL, i + 1);
+            var pendingColumn = createColumn(pendingColumnName, PENDING, i + 1);
             columns.add(pendingColumn);
         }
-        for (int i = 0; i < additionalcollumns; i++) {
-            System.out.println("informe o nome da coluna final");
-            var finalColumnName = scanner.next();
-            var finalColumn = createColumn(finalColumnName, INITIAL, i + 1);
-            columns.add(finalColumn);
-        }
-        for (int i = 0; i < additionalcollumns; i++) {
-            System.out.println("informe o nome da coluna de cancelamento");
-            var cancelColumnName = scanner.next();
-            var cancelColumn = createColumn(cancelColumnName, INITIAL, i + 1);
-            columns.add(cancelColumn);
+        System.out.println("informe o nome da coluna final");
+        var finalColumnName = scanner.next();
+        var finalColumn = createColumn(finalColumnName, FINAL, additionalcollumns + 1);
+        columns.add(finalColumn);
 
-            entity.setBoardColumns(columns);
-            try (var connection = getConnection()) {
-                var service = new BoardService(connection);
-                service.insert(entity);
-            }
+        System.out.println("informe o nome da coluna de cancelamento");
+        var cancelColumnName = scanner.next();
+        var cancelColumn = createColumn(cancelColumnName, CANCEL, additionalcollumns + 2);
+        columns.add(cancelColumn);
+
+        entity.setBoardColumns(columns);
+        try (var connection = getConnection()) {
+            var service = new BoardService(connection);
+            entity = service.insert(entity);
+            System.out.printf("Cadastro Feito! ID: %d, Nome: %s\n", entity.getId(), entity.getName());
         }
+
     }
 
     private BoardColumnEntity createColumn(final String name, final BoardColumnKindEnum kind, final int order) {

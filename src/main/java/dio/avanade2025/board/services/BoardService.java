@@ -7,6 +7,7 @@ import lombok.AllArgsConstructor;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.ArrayList;
 
 @AllArgsConstructor
 public class BoardService {
@@ -33,11 +34,13 @@ public class BoardService {
         var boardColumnDAO = new BoardColumnDAO(connection);
         try {
             dao.insert(entity);
-            var columns = entity.getBoardColumns().stream().peek(c -> c.setBoard(entity)).toList();
+            var columns = new ArrayList<>(entity.getBoardColumns());
+            columns.forEach(c -> c.setBoard(entity));
             for (var column: columns) {
                 boardColumnDAO.insert(column);
             }
             connection.commit();
+            System.out.println('a');
         } catch (SQLException e) {
             connection.rollback();
             throw e;

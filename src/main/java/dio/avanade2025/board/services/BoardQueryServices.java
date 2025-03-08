@@ -1,5 +1,6 @@
 package dio.avanade2025.board.services;
 
+import dio.avanade2025.board.dto.BoardDetailsDTO;
 import dio.avanade2025.board.persistence.dao.BoardColumnDAO;
 import dio.avanade2025.board.persistence.dao.BoardDAO;
 import dio.avanade2025.board.persistence.entity.BoardEntity;
@@ -24,4 +25,18 @@ public class BoardQueryServices {
         }
         return Optional.empty();
     }
+
+    public Optional<BoardDetailsDTO> showBoardDetails(final Long id) throws SQLException {
+        var dao = new BoardDAO(connection);
+        var boardColumnDAO = new BoardColumnDAO(connection);
+        var optional = dao.findById(id);
+        if (optional.isPresent()) {
+            var entity = optional.get();
+            var columns = boardColumnDAO.findByBoardIdDetails(entity.getId());
+            var dto = new BoardDetailsDTO(entity.getId(),entity.getName(),columns );
+            return Optional.of(dto);
+        }
+        return Optional.empty();
+    }
+
 }
