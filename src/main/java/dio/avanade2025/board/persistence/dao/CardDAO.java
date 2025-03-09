@@ -7,9 +7,11 @@ import lombok.AllArgsConstructor;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.time.OffsetDateTime;
 import java.util.Optional;
 
 import static dio.avanade2025.board.persistence.converter.OffsetDateTimeConverter.toOffsetDAteTime;
+import static dio.avanade2025.board.persistence.converter.OffsetDateTimeConverter.toTimesTamp;
 import static java.util.Objects.nonNull;
 
 
@@ -18,12 +20,13 @@ public class CardDAO {
     private Connection connection;
 
     public CardsEntity insert(final CardsEntity entity) throws SQLException {
-        var sql = "INSERT INTO CARDS (title, description, board_column_id) VALUES (?,?,?)";
+        var sql = "INSERT INTO CARDS (title, description, board_column_id, create_at) VALUES (?,?,?,?)";
         try (var statement = connection.prepareStatement(sql) ){
             var i = 1;
             statement.setString(i ++, entity.getTitle());
             statement.setString(i ++, entity.getDescription());
-            statement.setLong(i, entity.getBoardColumn().getId());
+            statement.setLong(i++, entity.getBoardColumn().getId());
+            statement.setTimestamp(i , toTimesTamp(OffsetDateTime.now()));
             statement.executeUpdate();
             if (statement instanceof StatementImpl impl){
                 entity.setId(impl.getLastInsertID());
