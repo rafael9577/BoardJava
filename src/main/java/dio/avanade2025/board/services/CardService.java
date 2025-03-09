@@ -1,7 +1,6 @@
 package dio.avanade2025.board.services;
 
 import dio.avanade2025.board.dto.BoardColumnInfoDTO;
-import dio.avanade2025.board.dto.CardDetailsDTO;
 import dio.avanade2025.board.exception.CardBlockedException;
 import dio.avanade2025.board.exception.CardFinishedExcept;
 import dio.avanade2025.board.exception.EntityNotFoundException;
@@ -115,6 +114,26 @@ public class CardService {
             blockDao.block(id, reason);
             connection.commit();
         } catch (SQLException e) {
+            connection.rollback();
+            throw e;
+        }
+    }
+
+    public void unblock(final Long id, final String reason) throws SQLException {
+        try {
+            var dao = new CardDAO(connection);
+            var optional = dao.findById(id);
+            var dto = optional.orElseThrow(
+                    () -> new EntityNotFoundException("O card de id %s não foi encontrado".formatted(id))
+            );
+            if (!dto.blocked()) {
+                var message = "O card %s já está desbloqueado".formatted(dto.id());
+                throw new CardBlockedException(message);
+            }
+            var blockDao = new BlockDAO(connection);
+            blockDao.unblock(id, reason);
+            connection.commit();
+        } catch (SQLException e){
             connection.rollback();
             throw e;
         }

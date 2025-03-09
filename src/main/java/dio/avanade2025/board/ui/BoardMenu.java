@@ -118,8 +118,16 @@ public class BoardMenu {
         }
     }
 
-    private void desbloquear() {
-
+    private void desbloquear() throws SQLException {
+        System.out.println("Informe o id do card que será bloqueado");
+        var cardId = scanner.nextLong();
+        System.out.println("Informe o motivo do bloqueio do card");
+        var reason = scanner.next();
+        try (var connection = getConnection()) {
+            new CardService(connection).unblock(cardId, reason);
+        } catch (RuntimeException ex) {
+            System.out.println(ex.getMessage());
+        }
     }
 
     private void bloquearcard() throws SQLException {
